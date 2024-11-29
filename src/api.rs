@@ -885,7 +885,7 @@ impl Client {
             // XXX unwraps here are not necessarily safe
             client_id: String::from_utf8(apikey.client_id().to_vec())
                 .unwrap(),
-            device_type: 8,
+            device_type: 25,
             device_identifier: device_id.to_string(),
             device_name: "rbw".to_string(),
             device_push_token: String::new(),
@@ -942,7 +942,7 @@ impl Client {
                     grant_type: "authorization_code".to_string(),
                     scope: "api offline_access".to_string(),
                     client_id: "cli".to_string(),
-                    device_type: 8,
+                    device_type: 25,
                     device_identifier: device_id.to_string(),
                     device_name: "rbw".to_string(),
                     device_push_token: String::new(),
@@ -961,7 +961,7 @@ impl Client {
                 grant_type: "password".to_string(),
                 scope: "api offline_access".to_string(),
                 client_id: "cli".to_string(),
-                device_type: 8,
+                device_type: 25,
                 device_identifier: device_id.to_string(),
                 device_name: "rbw".to_string(),
                 device_push_token: String::new(),
