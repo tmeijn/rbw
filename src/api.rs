@@ -767,6 +767,13 @@ struct FoldersPostReq {
     name: String,
 }
 
+// Used for the Bitwarden-Client-Name header. Accepted values:
+// https://github.com/bitwarden/server/blob/main/src/Core/Enums/BitwardenClient.cs
+const BITWARDEN_CLIENT: &'static str = "cli";
+
+// DeviceType.LinuxDesktop, as per Bitwarden API device types.
+const DEVICE_TYPE: u8 = 8;
+
 #[derive(Debug)]
 pub struct Client {
     base_url: String,
@@ -796,11 +803,23 @@ impl Client {
         let mut default_headers = axum::http::HeaderMap::new();
         default_headers.insert(
             "Bitwarden-Client-Name",
-            axum::http::HeaderValue::from_static(env!("CARGO_PKG_NAME")),
+            axum::http::HeaderValue::from_static(BITWARDEN_CLIENT),
         );
         default_headers.insert(
             "Bitwarden-Client-Version",
             axum::http::HeaderValue::from_static(env!("CARGO_PKG_VERSION")),
+        );
+        default_headers.append(
+            "Device-Type",
+            // unwrap is safe here because DEVICE_TYPE is a number and digits
+            // are valid ASCII
+            axum::http::HeaderValue::from_str(&DEVICE_TYPE.to_string())
+                .unwrap(),
+        );
+        let user_agent = format!(
+            "{}/{}",
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION")
         );
         if let Some(client_cert_path) = self.client_cert_path.as_ref() {
             let mut buf = Vec::new();
@@ -819,22 +838,14 @@ impl Client {
             let pem = reqwest::Identity::from_pem(&buf)
                 .map_err(|e| Error::CreateReqwestClient { source: e })?;
             Ok(reqwest::Client::builder()
-                .user_agent(format!(
-                    "{}/{}",
-                    env!("CARGO_PKG_NAME"),
-                    env!("CARGO_PKG_VERSION")
-                ))
+                .user_agent(user_agent)
                 .identity(pem)
                 .default_headers(default_headers)
                 .build()
                 .map_err(|e| Error::CreateReqwestClient { source: e })?)
         } else {
             Ok(reqwest::Client::builder()
-                .user_agent(format!(
-                    "{}/{}",
-                    env!("CARGO_PKG_NAME"),
-                    env!("CARGO_PKG_VERSION")
-                ))
+                .user_agent(user_agent)
                 .default_headers(default_headers)
                 .build()
                 .map_err(|e| Error::CreateReqwestClient { source: e })?)
@@ -885,7 +896,7 @@ impl Client {
             // XXX unwraps here are not necessarily safe
             client_id: String::from_utf8(apikey.client_id().to_vec())
                 .unwrap(),
-            device_type: 25,
+            device_type: DEVICE_TYPE as u32,
             device_identifier: device_id.to_string(),
             device_name: "rbw".to_string(),
             device_push_token: String::new(),
@@ -942,7 +953,7 @@ impl Client {
                     grant_type: "authorization_code".to_string(),
                     scope: "api offline_access".to_string(),
                     client_id: "cli".to_string(),
-                    device_type: 25,
+                    device_type: DEVICE_TYPE as u32,
                     device_identifier: device_id.to_string(),
                     device_name: "rbw".to_string(),
                     device_push_token: String::new(),
@@ -961,7 +972,7 @@ impl Client {
                 grant_type: "password".to_string(),
                 scope: "api offline_access".to_string(),
                 client_id: "cli".to_string(),
-                device_type: 25,
+                device_type: 8,
                 device_identifier: device_id.to_string(),
                 device_name: "rbw".to_string(),
                 device_push_token: String::new(),
